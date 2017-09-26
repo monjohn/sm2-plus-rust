@@ -2,6 +2,8 @@
 pub mod spacing {
     use std::time::{UNIX_EPOCH, SystemTime};
 
+    const DEFAULT_DIFFICULTY: f64 = 0.3;
+
     #[derive(Debug)]
     pub struct Card {
         pub question: String,
@@ -9,6 +11,28 @@ pub mod spacing {
         pub update: u32,
         pub interval: u32,
         pub difficulty: f64,
+    }
+
+    impl Card {
+        pub fn new(question: String, answer: String) -> Card {
+            Card {
+                question: question,
+                answer: answer,
+                difficulty: DEFAULT_DIFFICULTY,
+                interval: 1,
+                update: today_in_secs(),
+            }
+        }
+
+        pub fn from_card(card: &Card, difficulty: f64, interval: u32, today: u32) -> Card {
+            Card {
+                question: card.question.clone(),
+                answer: card.answer.clone(),
+                difficulty: difficulty,
+                interval: interval,
+                update: today,
+            }
+        }
     }
 
     pub fn today_in_secs() -> u32 {
@@ -44,16 +68,6 @@ pub mod spacing {
         }
     }
 
-    fn new_card(card: &Card, difficulty: f64, interval: u32, today: u32) -> Card {
-        Card {
-            question: card.question.clone(),
-            answer: card.answer.clone(),
-            difficulty: difficulty,
-            interval: interval,
-            update: today,
-        }
-    }
-
     pub fn calculate(card: &Card, rating: f64, today: u32) -> Card {
         let percent_overdue = percent_overdue(card.interval, card.update, today);
 
@@ -61,7 +75,7 @@ pub mod spacing {
                                        (8.0 - 9.0 * rating) * percent_overdue / 17.0);
         let difficulty_weight = 3.0 - 1.7 * difficulty;
         let new_interval = new_interval(rating, difficulty_weight, percent_overdue);
-        new_card(&card, difficulty, new_interval, today)
+        Card::from_card(&card, difficulty, new_interval, today)
     }
 }
 
@@ -77,6 +91,7 @@ mod tests {
             interval: 100,
             difficulty: 0.2,
         };
+
         let correct = spacing::Card {
             question: String::from("Question"),
             answer: String::from("Answer"),
